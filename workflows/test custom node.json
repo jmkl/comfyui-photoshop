@@ -1,0 +1,65 @@
+{
+  "1": {
+    "inputs": {
+      "ckpt_name": "epicrealism_pureEvolutionV5-inpainting.safetensors",
+      "vae_name": "Baked VAE",
+      "clip_skip": -1,
+      "lora_name": "None",
+      "lora_model_strength": 1,
+      "lora_clip_strength": 1,
+      "positive": "Raw photo, a beautiful woman",
+      "negative": "embedding:epiCNegative",
+      "empty_latent_width": 512,
+      "empty_latent_height": 512,
+      "batch_size": 1
+    },
+    "title": "Efficient Loader",
+    "class_type": "Efficient Loader"
+  },
+  "2": {
+    "inputs": {
+      "sampler_state": "Sample",
+      "seed": 2994275810563767,
+      "steps": 20,
+      "cfg": 7,
+      "sampler_name": "dpmpp_2m_sde",
+      "scheduler": "karras",
+      "denoise": 1,
+      "preview_method": "auto",
+      "vae_decode": "true",
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "1",
+        1
+      ],
+      "negative": [
+        "1",
+        2
+      ],
+      "latent_image": [
+        "1",
+        3
+      ],
+      "optional_vae": [
+        "1",
+        4
+      ]
+    },
+    "title": "KSampler (Efficient)",
+    "class_type": "KSampler (Efficient)"
+  },
+  "3": {
+    "inputs": {
+      "filename_prefix": "Test",
+      "images": [
+        "2",
+        5
+      ]
+    },
+    "title": "Save Image",
+    "class_type": "SaveImage"
+  }
+}

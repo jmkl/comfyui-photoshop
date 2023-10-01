@@ -1,0 +1,77 @@
+{
+  "3": {
+    "inputs": {
+      "seed": 762007726057022,
+      "steps": 20,
+      "cfg": 8,
+      "sampler_name": "dpmpp_2m_sde",
+      "scheduler": "karras",
+      "denoise": 1,
+      "model": ["13", 0],
+      "positive": ["6", 0],
+      "negative": ["7", 0],
+      "latent_image": ["14", 0]
+    },
+    "title": "KSampler",
+    "class_type": "KSampler"
+  },
+  "4": {
+    "inputs": {
+      "ckpt_name": "epicrealism_pureEvolutionV5-inpainting.safetensors"
+    },
+    "title": "Load Checkpoint",
+    "class_type": "CheckpointLoaderSimple"
+  },
+  "6": {
+    "inputs": {
+      "text": "RAW photo, beautiful woman, wavy long hair, big breast, looking up, red lips, jr korpa",
+      "clip": ["13", 1]
+    },
+    "title": "Positive Prompt",
+    "class_type": "CLIPTextEncode"
+  },
+  "7": {
+    "inputs": {
+      "text": "text, watermark",
+      "clip": ["4", 1]
+    },
+    "title": "Negative Prompt",
+    "class_type": "CLIPTextEncode"
+  },
+  "8": {
+    "inputs": {
+      "samples": ["3", 0],
+      "vae": ["4", 2]
+    },
+    "title": "VAE Decode",
+    "class_type": "VAEDecode"
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "with lora",
+      "images": ["8", 0]
+    },
+    "title": "Save Image",
+    "class_type": "SaveImage"
+  },
+  "13": {
+    "inputs": {
+      "lora_name": "jr korpa.safetensors",
+      "strength_model": 1,
+      "strength_clip": 1,
+      "model": ["4", 0],
+      "clip": ["4", 1]
+    },
+    "title": "Load LoRA",
+    "class_type": "LoraLoader"
+  },
+  "14": {
+    "inputs": {
+      "width": 512,
+      "height": 512,
+      "batch_size": 1
+    },
+    "title": "Empty Latent Image",
+    "class_type": "EmptyLatentImage"
+  }
+}
