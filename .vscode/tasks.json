@@ -1,0 +1,51 @@
+{
+    "version": "2.0.0",
+    "options": {
+        "env": {
+            "NODE_OPTIONS": "--openssl-legacy-provider"
+        }
+    },
+    "tasks": [
+        {
+            "type": "shell",
+            "command": "pnpm run build",
+            "label": "DEBUG",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "silent",
+                "revealProblems": "onProblem",
+                "close": true
+            }
+        },
+        {
+            "label": "RELEASE",
+            "type":"shell",
+            "command":"uxp plugin package --manifest .\\dist\\manifest.json --outputPath .\\build",
+            
+            "dependsOn":[
+                "PACKTORELEASE"
+            ],"group": {
+                "kind": "build",
+                "isDefault": false
+            },
+        },
+        {
+            "type": "shell",
+            "command": "pnpm run release",
+            "label": "PACKTORELEASE",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "reveal": "silent",
+                "revealProblems": "onProblem",
+                "close": true
+            }
+        },
+    
+    ],
+}
