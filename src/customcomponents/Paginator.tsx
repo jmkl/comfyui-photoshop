@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import ReactPaginate from 'react-paginate';
 import { insertSmartObject } from '../utils/PhotoshopUtils';
-import { IMAGEITEMS } from '../utils/props';
+import { IMAGEITEMS, content } from '../utils/props';
 type Props = {
   itemsPerPage: number;
   imageitem?: IMAGEITEMS;
-  removeItem?: (filename: string) => void;
-  addFavorite?: (filename: string) => void;
+  removeItem?: (image: content) => void;
+  addFavorite?: (image: content) => void;
 };
 export default function Paginator(props: Props) {
   const [itemOffset, setItemOffset] = useState(0);
@@ -31,7 +31,7 @@ export default function Paginator(props: Props) {
     if (props?.imageitem?.mode == 'smartobject') {
       props?.removeItem(item.name);
     } else if (props?.imageitem?.mode == 'texture') {
-      props?.addFavorite(item.name);
+      props?.addFavorite(item);
     }
   }
   useEffect(() => {
@@ -54,9 +54,11 @@ export default function Paginator(props: Props) {
       </div>
       <div className="w-full !overflow-y-auto flex flex-wrap flex-row justify-between mt-2 h80vh">
         {currentItems &&
-          currentItems.map((item: { thumb: string; name: any }, index: React.Key) => (
+          currentItems.map((item: content, index: React.Key) => (
             <img
-              className="w-1/4 h-16 object-cover cursor-pointer border-4 hover:border-white border-transparent"
+              className={`${
+                props?.imageitem?.mode === 'smartobject' ? 'w-1/4 h-20' : 'w-1/2 h-36'
+              } object-cover cursor-pointer border-4 hover:border-white border-transparent`}
               key={index}
               src={item.thumb}
               onContextMenu={(e) => handleRightClick(e, item)}

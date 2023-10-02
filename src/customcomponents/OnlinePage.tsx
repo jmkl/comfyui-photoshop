@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Md5 } from 'ts-md5';
 import { insertLinkedImage } from '../utils/PhotoshopUtils';
+import { InlineDialogContent } from '../utils/props';
 type Props = {
   keyword?: string;
   onlineToken?: any;
+  UIDialog?: (e: InlineDialogContent, doThis: () => Promise<any>) => void;
 };
 export default function OnlinePage(props: Props) {
   const [itemOffset, setItemOffset] = useState(0);
@@ -21,7 +23,6 @@ export default function OnlinePage(props: Props) {
         if (r.ok) return r.json();
       })
       .then((d) => {
-        console.log(d);
         let content = d?.items?.map((d) => {
           return { name: d?.source, thumb: d?.preview?.url, url: d?.fullResolution?.url };
         });
@@ -29,19 +30,32 @@ export default function OnlinePage(props: Props) {
       });
   }
   async function downloadImage(url: string, filename: string) {
-    const downloadFile = await props?.onlineToken?.getEntry(filename).catch((e) => console.log(e));
-    console.log(downloadFile);
+    const downloadFile = await props?.onlineToken?.getEntry(filename);
+
     if (!downloadFile) {
-      fetch(url)
-        .then((result) => {
-          if (result.ok) return result.arrayBuffer();
-        })
-        .then(async (buffer) => {
-          const new_jpeg = await props?.onlineToken?.createFile(filename, { overwrite: true });
-          await new_jpeg.write(buffer, { format: require('uxp').storage.formats.binary }).then(async () => {
-            await insertLinkedImage(new_jpeg, filename);
+      props?.UIDialog(
+        {
+          isloading: true,
+          title: 'Downloading...',
+          message: 'please wait.....',
+          show: true,
+        },
+        async () => {
+          return new Promise(async (resolve, reject) => {
+            fetch(url)
+              .then((result) => {
+                if (result.ok) return result.arrayBuffer();
+              })
+              .then(async (buffer) => {
+                const new_jpeg = await props?.onlineToken?.createFile(filename, { overwrite: true });
+                await new_jpeg.write(buffer, { format: require('uxp').storage.formats.binary }).then(async () => {
+                  await insertLinkedImage(new_jpeg, filename);
+                  resolve(new_jpeg);
+                });
+              });
           });
-        });
+        }
+      );
     } else {
       await insertLinkedImage(downloadFile, filename);
     }
@@ -72,7 +86,7 @@ export default function OnlinePage(props: Props) {
         {images &&
           images?.map((item, index) => (
             <img
-              className="w-1/3 h-24 object-cover cursor-pointer border-4 hover:border-white border-transparent"
+              className="w-1/2 h-36 object-cover cursor-pointer border-4 hover:border-white border-transparent"
               key={index}
               src={item.thumb}
               onClick={() => {

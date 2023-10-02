@@ -391,9 +391,14 @@ export const MainPanel: React.FC = () => {
     });
   }, [thumbRoot]);
 
-  function HandleUIDialog(content: InlineDialogContent) {
+  async function HandleUIDialog(content: InlineDialogContent, doThis?: () => Promise<any>) {
     setShowUILoader(true);
     setLoadingContent(() => content);
+    if (doThis) {
+      doThis().then(() => {
+        setShowUILoader(false);
+      });
+    }
   }
   return (
     <>
@@ -402,28 +407,31 @@ export const MainPanel: React.FC = () => {
           <div className="acc-title text-white text-lg uppercase mb-2 mt-8">{loadingContent.title}</div>
           <div className="text-white">{loadingContent.message}</div>
         </div>
-        <div className="flex flex-row justify-end">
-          <Button
-            variant="secondary"
-            className="rounded-sm mr-2"
-            onClick={() => {
-              loadingContent.onOk('do ok');
-              setShowUILoader(false);
-            }}
-          >
-            Ok
-          </Button>
-          <Button
-            variant="warning"
-            className="rounded-sm"
-            onClick={() => {
-              loadingContent.onOk('do cancel');
-              setShowUILoader(false);
-            }}
-          >
-            Cancel
-          </Button>
-        </div>
+        {loadingContent.isloading === false ||
+          (loadingContent.isloading === undefined && (
+            <div className="flex flex-row justify-end">
+              <Button
+                variant="secondary"
+                className="rounded-sm mr-2"
+                onClick={() => {
+                  loadingContent.onOk('do ok');
+                  setShowUILoader(false);
+                }}
+              >
+                Ok
+              </Button>
+              <Button
+                variant="warning"
+                className="rounded-sm"
+                onClick={() => {
+                  loadingContent.onCancel('do cancel');
+                  setShowUILoader(false);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          ))}
       </div>
       <MainContainer className={`${showUILoader ? 'hidden' : ''}`}>
         <ModalDialog title={dialogContent.title} content={dialogContent.content} dialogref={modalDialog} />

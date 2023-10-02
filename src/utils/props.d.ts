@@ -92,9 +92,10 @@ export type IMAGEONLINE = {
   ];
 };
 
-type content = {
+export type content = {
   name: string;
   thumb: string;
+  favorite: boolean;
   category?: string;
 };
 export type IMAGEITEMS = {
@@ -105,6 +106,7 @@ export type IMAGEITEMS = {
 };
 
 export type InlineDialogContent = {
+  isloading?: boolean;
   show: boolean;
   title: string;
   message: string;

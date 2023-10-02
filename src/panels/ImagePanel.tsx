@@ -63,6 +63,7 @@ export default function ImagePanel(props: Props) {
             return {
               name: p?.name,
               category: p?.category,
+              favorite: p?.favorite,
               thumb: `file:\\\\${tokenTextures?.nativePath}\\\.thumbnail\\${
                 category == 'Vector' ? p?.name?.replace('eps', 'jpg') : p?.name
               }`,
@@ -139,7 +140,7 @@ export default function ImagePanel(props: Props) {
   }
   useEffect(() => {
     if (!props?.aioServer?.lastJsonMessage) return;
-    console.log('HEEEEEEEEEEEEEEEEEEEEEEE');
+
     switch (props?.aioServer?.lastJsonMessage?.type) {
       case 'createthumb':
         loadSmartObjectFile();
@@ -179,6 +180,7 @@ export default function ImagePanel(props: Props) {
           <Textfield
             type="search"
             className="grow"
+            value={filterValue || ''}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 setSearchImage(filterValue);
@@ -205,6 +207,7 @@ export default function ImagePanel(props: Props) {
           overrideClass="w-1/3"
           items={image_provider}
           onChange={(e) => {
+            setFilterValue('');
             setProvider(image_provider[e.target.selectedIndex]);
           }}
         />
@@ -248,18 +251,30 @@ export default function ImagePanel(props: Props) {
       )}
       <div className="w-full flex flex-row flex-wrap">
         {isOnline ? (
-          <OnlinePage keyword={searchImage} onlineToken={tokenOnline} />
+          <OnlinePage keyword={searchImage} onlineToken={tokenOnline} UIDialog={props?.UIDialog} />
         ) : (
           <Paginator
             itemsPerPage={32}
             imageitem={filteredImages}
-            addFavorite={(itemname) => {
+            addFavorite={(item) => {
               props?.UIDialog({
                 show: true,
                 title: 'Add to Favorite',
-                message: `are u sure you wanna add \"${itemname}\" from your current library??`,
+                message: `are u sure you wanna add \"${item.name}\" to your favorite??`,
                 onOk: (result) => {
-                  console.log(result);
+                  const _url = `${texture_url}/fav/${item.name}/${item.favorite}`;
+                  console.log(_url);
+                  fetch(_url)
+                    .then((response) => {
+                      if (response.ok) {
+                        return response.json();
+                      }
+                    })
+                    .then((data) => {
+                      const entrytexture_cat = { ...entryTextureCategory };
+                      entrytexture_cat.content[entrytexture_cat.content.findIndex((e) => e.name === item.name)].favorite = !item.favorite;
+                      setEntryTextureCategory(entrytexture_cat);
+                    });
                 },
                 onCancel: (result) => {
                   console.log(result);
@@ -267,11 +282,21 @@ export default function ImagePanel(props: Props) {
               });
             }}
             removeItem={(itemname) => {
-              getSmartObjectNativePath(tokenSmartObject, itemname).then((result) => {
-                props?.aioServer?.sendJsonMessage({
-                  type: 'deletethumb',
-                  fromserver: false,
-                  data: result,
+              getSmartObjectNativePath(tokenSmartObject, itemname.name).then((result) => {
+                props?.UIDialog({
+                  show: true,
+                  title: 'Add to Favorite',
+                  message: `are u sure you wanna delete \"${itemname.name}\" from your current library??`,
+                  onOk: (eps) => {
+                    props?.aioServer?.sendJsonMessage({
+                      type: 'deletethumb',
+                      fromserver: false,
+                      data: result,
+                    });
+                  },
+                  onCancel: (e) => {
+                    console.log(result);
+                  },
                 });
               });
             }}
