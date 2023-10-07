@@ -33,6 +33,9 @@
   background-color: #141414;
   border-radius: 5px;
 }
+.height80vh{
+  height: 80vh;
+}
 .h80vh{
   max-height: 80vh;
 }

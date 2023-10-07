@@ -76,6 +76,8 @@ export type TAGnVERTICALALIGN = {
 export type CUSTOMSCRIPT = {
   name: string;
   icon_path: string;
+  executable?: boolean;
+  script?: string;
   func: any;
 };
 

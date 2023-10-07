@@ -1,0 +1,33 @@
+{
+  "38": {
+    "inputs": {
+      "image": "y5lkb.png",
+      "choose file to upload": "image"
+    },
+    "title": "Load Image",
+    "class_type": "LoadImage"
+  },
+  "40": {
+    "inputs": {
+      "filename_prefix": "Depth",
+      "images": [
+        "41",
+        0
+      ]
+    },
+    "title": "Save Image",
+    "class_type": "SaveImage"
+  },
+  "41": {
+    "inputs": {
+      "preprocessor": "MiDaS-DepthMapPreprocessor",
+      "resolution": 512,
+      "image": [
+        "38",
+        0
+      ]
+    },
+    "title": "AIO Aux Preprocessor",
+    "class_type": "AIO_Preprocessor"
+  }
+}

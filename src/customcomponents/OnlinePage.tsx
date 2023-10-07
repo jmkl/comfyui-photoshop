@@ -30,7 +30,7 @@ export default function OnlinePage(props: Props) {
       });
   }
   async function downloadImage(url: string, filename: string) {
-    const downloadFile = await props?.onlineToken?.getEntry(filename);
+    const downloadFile = await props?.onlineToken?.getEntry(filename).catch((e) => console.log(e));
 
     if (!downloadFile) {
       props?.UIDialog(

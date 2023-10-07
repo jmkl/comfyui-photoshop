@@ -18,8 +18,7 @@ type Props = {
   workflows?: any;
   bounds?: BOUNDS;
   isRunning?: boolean;
-  modalDialog?: React.MutableRefObject<any>;
-  setDialogContent?: any;
+  showDialog?: (title: string, content: string) => Promise<any>;
   ioFolder?: any;
   uuid: string;
   progress: boolean;
@@ -86,7 +85,11 @@ export default function WorkflowLoaderPanel(props: Props) {
     const promises = Object.keys(_WF).map(async (v, idx) => {
       const _class_type = _WF?.[v]?.class_type;
       const result = await fetchObjectInfo(_class_type);
-      const contents = result[_class_type]['input']['required'];
+      let contents = result[_class_type]['input']['required'];
+      const optional = result[_class_type]['input']['optional'];
+      if (optional !== undefined) {
+        contents = { ...contents, ...optional };
+      }
       return { key: _class_type, value: contents };
     });
 
@@ -369,20 +372,17 @@ export default function WorkflowLoaderPanel(props: Props) {
                                     disable={props?.bounds?.left == 0 && props?.bounds?.right == 0 ? true : false}
                                     which="selection"
                                     onClick={(e) => {
-                                      props?.setDialogContent({ title: 'Crop this', content: 'saving cropped selection as input image' });
-                                      props?.modalDialog?.current
-                                        ?.uxpShowModal({ title: 'ComfyPSD', size: { width: 360, height: 300 } })
-                                        .then((result: boolean) => {
-                                          if (result) {
-                                            saveSelectionToImage(props?.bounds, props?.ioFolder).then((result) => {
-                                              if (result) {
-                                                card_item_object[0].push(result);
-                                                changeValueDropDown(index, child_index, result, card_item_object[0]);
-                                                handleInputChange(keyname, value, result);
-                                              }
-                                            });
-                                          }
-                                        });
+                                      props?.showDialog('Crop this', 'Saving cropped selection as input image').then((ok) => {
+                                        if (ok) {
+                                          saveSelectionToImage(props?.bounds, props?.ioFolder).then((result) => {
+                                            if (result) {
+                                              card_item_object[0].push(result);
+                                              changeValueDropDown(index, child_index, result, card_item_object[0]);
+                                              handleInputChange(keyname, value, result);
+                                            }
+                                          });
+                                        }
+                                      });
                                     }}
                                   />
                                 </div>

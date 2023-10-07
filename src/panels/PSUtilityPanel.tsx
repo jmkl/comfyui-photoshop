@@ -47,15 +47,6 @@ export default function PSUtilityPanel(props: Props) {
   const [upRF, setUpRF] = useState({ 'rf': false, 'cb': false });
   const [configContent, setConfigContent] = useState(null);
   const [currentRFConfig, setCurrentRFConfig] = useState(null);
-  const [aioServer, setAioServer] = useState(false);
-
-  // const { sendJsonMessage, lastJsonMessage } = useWebSocket('ws://localhost:7898/Server', {
-  //   onOpen: () => setAioServer(true),
-  //   onClose: () => setAioServer(false),
-  //   shouldReconnect: (closeEvent) => {
-  //     return true;
-  //   },
-  // });
 
   //#region ONCLICK AND SLIDER
 
@@ -137,7 +128,6 @@ export default function PSUtilityPanel(props: Props) {
   useEffect(() => {}, [configContent]);
 
   useEffect(() => {
-    console.log('update');
     if (!upRF['rf']) return;
     const result = RAWFilter.reduce((accumulator, item) => {
       accumulator[item.name] = item.value;
@@ -237,7 +227,6 @@ export default function PSUtilityPanel(props: Props) {
   const [lineCount, setLineCount] = useState(3);
   const [currentText, setCurrentText] = useState<TextMode[]>([]);
   const [showSpan, setShowSpan] = useState(false);
-  const [TempRoot, setTempRoot] = useState(null);
   const [templates, setTemplates] = useState(null);
   const [batchPlays, setBatchPlays] = useState(null);
   const [templateIndex, setTemplateIndex] = useState(parseInt(localStorage.getItem(TEMPLATEINDEX)) || -1);
@@ -455,7 +444,7 @@ export default function PSUtilityPanel(props: Props) {
   }, [props.receiveText]);
   const sections = [
     {
-      title: 'Text Tools',
+      title: 'Text Tools & Color',
       content: (
         <div className={`flex flex-wrap w-full`}>
           <div className="w-full flex flex-col">
@@ -474,9 +463,11 @@ export default function PSUtilityPanel(props: Props) {
                 <DropDownPicker
                   overrideClass="grow"
                   selectedIndex={-1}
-                  items={tagLayers?.map((e) => e?.name)}
+                  items={tagLayers?.map((e) => e && e?.name)}
                   onChange={(e) => {
-                    showThumbnailTag(tagLayers, e.target.value);
+                    try {
+                      showThumbnailTag(tagLayers, e.target.value);
+                    } catch (e) {}
                   }}
                 />
               )}
@@ -533,9 +524,9 @@ export default function PSUtilityPanel(props: Props) {
             <Button
               variant="cta"
               className="rounded-sm"
-              onClick={() => {
+              onClick={async () => {
                 const result = templates?.find((e) => e.name === templateName);
-                applyTemplate(result, currentText, withTag);
+                await applyTemplate(result, currentText, withTag);
                 const emblems = currentText.filter((e) => e.mode === 1);
                 for (const emblem of emblems) {
                   props?.aioServer?.sendJsonMessage({
@@ -545,6 +536,7 @@ export default function PSUtilityPanel(props: Props) {
                     textdata: emblem.text,
                   });
                 }
+                checkTagLayers();
               }}
             >
               Create
@@ -603,127 +595,122 @@ export default function PSUtilityPanel(props: Props) {
                   })} */}
             </div>
           </div>
+          <ColorTools />
         </div>
       ),
     },
-    {
-      title: 'Colorizer',
-      content: <ColorTools />,
-    },
-    {
-      title: 'Raw Filter',
-      content: (
-        <div className={`flex flex-wrap w-full`}>
-          <div className="w-full flex flex-row">
-            <DropDrownPicker
-              selectedIndex={-1}
-              items={configContent?.map((e: any) => e.name) || ['']}
-              overrideClass="grow w-1/2 mx-1"
-              onChange={(e) => {
-                const data = configContent[e.target.selectedIndex]?.data;
-                setConfName(configContent[e.target.selectedIndex]?.name);
-                setCurrentRFConfig(data);
-              }}
-            />
-            <Button
-              variant="cta"
-              className="rounded-sm"
-              onClick={() => {
-                showSavePanel(false);
-                if (currentRFConfig != null) {
-                  upRFCallback('rf', true);
-                  const result = currentRFConfig.reduce((accumulator, item) => {
-                    accumulator[item.name] = item.value;
-                    return accumulator;
-                  }, {});
 
-                  updateValueByName(result as rf_data);
-                }
-              }}
-            >
-              Apply
-            </Button>
-            <Button variant="cta" className={`${savePanel ? 'hidden' : ''} ml-1 rounded-sm`} onClick={() => showSavePanel(true)}>
-              Save
-            </Button>
-          </div>
-          <div className={'w-full flex-row my-1 ' + `${savePanel ? 'flex' : 'hidden'}`}>
-            <Textfield quiet={true} value={confName} onChange={(e) => setConfName(e.target.value)} className="grow mr-1" />
-            <Button
-              variant="warning"
-              className="rounded-sm mr-1"
-              onClick={() => {
-                updateConfigFile(confName, true);
-                showSavePanel(false);
-              }}
-            >
-              Delete
-            </Button>
-            <Button
-              variant="cta"
-              className="rounded-sm"
-              onClick={() => {
-                if (confName === '') return;
-
-                updateConfigFile(confName, false);
-                showSavePanel(false);
-              }}
-            >
-              Save
-            </Button>
-          </div>
-          {RAWFilter &&
-            RAWFilter.map((rawfilt, index) => {
-              return (
-                <Slider
-                  className={`w-1/2 ${index % 2 == 0 ? 'pr-1' : 'pl-1'}`}
-                  key={index}
-                  min={rawfilt.min}
-                  name={rawfilt.name}
-                  max={rawfilt.max}
-                  step={rawfilt.step}
-                  value={rawfilt.value}
-                  onChange={(e) => handleSliderChange(e.target.dataset.name, e.target.value)}
-                >
-                  <Label slot="label">{rawfilt.name}</Label>
-                </Slider>
-              );
-            })}
-        </div>
-      ),
-    },
     {
-      title: 'Color Balance',
+      title: 'Raw Filter & Color Balance',
       content: (
-        <div className={`flex flex-wrap w-full`}>
-          <div className="w-full flex">
-            <DropDrownPicker
-              items={['Shadow', 'Midtone', 'HightLight']}
-              selectedIndex={1}
-              horizontalmode={true}
-              title="Tone:"
-              onChange={(e) => {
-                setCbMode(e.target.selectedIndex);
-              }}
-            />
+        <>
+          <div className={`flex flex-wrap w-full`}>
+            <div className="w-full flex flex-row">
+              <DropDrownPicker
+                selectedIndex={-1}
+                items={configContent?.map((e: any) => e.name) || ['']}
+                overrideClass="grow w-1/2 mx-1"
+                onChange={(e) => {
+                  const data = configContent[e.target.selectedIndex]?.data;
+                  setConfName(configContent[e.target.selectedIndex]?.name);
+                  setCurrentRFConfig(data);
+                }}
+              />
+              <Button
+                variant="cta"
+                className="rounded-sm"
+                onClick={() => {
+                  showSavePanel(false);
+                  if (currentRFConfig != null) {
+                    upRFCallback('rf', true);
+                    const result = currentRFConfig.reduce((accumulator, item) => {
+                      accumulator[item.name] = item.value;
+                      return accumulator;
+                    }, {});
+
+                    updateValueByName(result as rf_data);
+                  }
+                }}
+              >
+                Apply
+              </Button>
+              <Button variant="cta" className={`${savePanel ? 'hidden' : ''} ml-1 rounded-sm`} onClick={() => showSavePanel(true)}>
+                Save
+              </Button>
+            </div>
+            <div className={'w-full flex-row my-1 ' + `${savePanel ? 'flex' : 'hidden'}`}>
+              <Textfield quiet={true} value={confName} onChange={(e) => setConfName(e.target.value)} className="grow mr-1" />
+              <Button
+                variant="warning"
+                className="rounded-sm mr-1"
+                onClick={() => {
+                  updateConfigFile(confName, true);
+                  showSavePanel(false);
+                }}
+              >
+                Delete
+              </Button>
+              <Button
+                variant="cta"
+                className="rounded-sm"
+                onClick={() => {
+                  if (confName === '') return;
+
+                  updateConfigFile(confName, false);
+                  showSavePanel(false);
+                }}
+              >
+                Save
+              </Button>
+            </div>
+            {RAWFilter &&
+              RAWFilter.map((rawfilt, index) => {
+                return (
+                  <Slider
+                    className={`w-1/2 ${index % 2 == 0 ? 'pr-1' : 'pl-1'}`}
+                    key={index}
+                    min={rawfilt.min}
+                    name={rawfilt.name}
+                    max={rawfilt.max}
+                    step={rawfilt.step}
+                    value={rawfilt.value}
+                    onChange={(e) => handleSliderChange(e.target.dataset.name, e.target.value)}
+                  >
+                    <Label slot="label">{rawfilt.name}</Label>
+                  </Slider>
+                );
+              })}
           </div>
-          {colorBalance &&
-            colorBalance.map((colbal, index) => {
-              return (
-                <Slider
-                  className={`w-full`}
-                  key={index}
-                  min={colbal.min}
-                  name={colbal.name}
-                  mode={colbal.mode}
-                  max={colbal.max}
-                  step={colbal.step}
-                  value={colbal.value[cbMode]}
-                  onChange={handleColorBalance}
-                />
-              );
-            })}
-        </div>
+          <div className={`flex flex-wrap w-full`}>
+            <div className="w-full flex">
+              <DropDrownPicker
+                items={['Shadow', 'Midtone', 'HightLight']}
+                selectedIndex={1}
+                horizontalmode={true}
+                title="Tone:"
+                onChange={(e) => {
+                  setCbMode(e.target.selectedIndex);
+                }}
+              />
+            </div>
+            {colorBalance &&
+              colorBalance.map((colbal, index) => {
+                return (
+                  <Slider
+                    className={`w-full`}
+                    key={index}
+                    min={colbal.min}
+                    name={colbal.name}
+                    mode={colbal.mode}
+                    max={colbal.max}
+                    step={colbal.step}
+                    value={colbal.value[cbMode]}
+                    onChange={handleColorBalance}
+                  />
+                );
+              })}
+          </div>
+        </>
       ),
     },
   ];

@@ -1,8 +1,9 @@
 import { core, app, action, constants, imaging } from 'photoshop';
 const fs = require('uxp').storage.localFileSystem;
 import { log } from './Log';
-import { TAGnVERTICALALIGN, TextMode, rf_data } from './props';
+import { CUSTOMSCRIPT, TAGnVERTICALALIGN, TextMode, rf_data } from './props';
 import { ALIGN, align_btn } from './constant';
+import Sval from 'sval';
 
 const filter_fx = (idx: number, which_filter: any) => {
   return {
@@ -208,6 +209,27 @@ function findLayer(layers, key) {
     }
   }
 }
+function findLayers(_key: string) {
+  const result = [];
+  const layers = app.activeDocument.layers;
+  function search(layers: any, key: string) {
+    for (const l of layers) {
+      if (l.kind === 'group') {
+        const result = search(l.layers, key);
+        if (result) {
+          return result;
+        }
+      } else {
+        if (l.name === key) {
+          result.push(l);
+        }
+      }
+    }
+  }
+  search(layers, _key);
+  return result;
+}
+
 async function changeTexts(dcsms_layer: any, texts: TextMode[], gap: number, margin_top: number, margin_left: number) {
   if (dcsms_layer) {
     await core
@@ -1070,11 +1092,25 @@ export async function insertLinkedImage(entryobject, filename) {
     .catch((e) => console.log(e));
 }
 
-export async function executeCustomScripts(script) {
+export async function executeCustomScripts(value: CUSTOMSCRIPT, folder: any, intepreter: Sval) {
   await core
     .executeAsModal(
       async (context, desc) => {
-        await app.batchPlay(script, {}).catch((e) => console.log(e));
+        if (value?.executable) {
+          const script = await folder.getEntry(value.script);
+
+          const read_script = await script.read();
+          intepreter.run(`    
+          "use strict";
+          async function myCode(){
+
+            ${read_script}
+          }
+          exports.returnValue = myCode();
+          `);
+        } else {
+          await app.batchPlay(value.func, {}).catch((e) => console.log(e));
+        }
       },
       { commandName: 'custom script' }
     )
@@ -1149,3 +1185,10 @@ export async function getSmartObjectNativePath(so_token: any, filename: string) 
   const result = await so_token.getEntry(filename + '.psb');
   return result.nativePath;
 }
+
+declare global {
+  interface Window {
+    FindLayers: object;
+  }
+}
+window.FindLayers = findLayers;

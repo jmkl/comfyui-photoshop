@@ -27,6 +27,7 @@ type Props = {
   onMouseOver?: (e: IconClickEvent) => void;
   customPath?: string;
   label?: string;
+  setLabel?: (e: string) => void;
 };
 declare global {
   namespace JSX {
@@ -74,9 +75,11 @@ export const HeroIcons = (props: Props) => {
   useEffect(() => {
     const dispatchMouseOver = (e: Event) => {
       setShowLabel(true);
+      if (props?.setLabel) props?.setLabel(props?.label);
     };
     const dispatchMouseLeave = (e: Event) => {
       setShowLabel(false);
+      if (props?.setLabel) props?.setLabel('');
     };
 
     ref.current?.addEventListener('mouseover', dispatchMouseOver);
@@ -88,7 +91,7 @@ export const HeroIcons = (props: Props) => {
   }, []);
 
   function loadIcon() {
-    const color_state = `cursor-pointer ${props?.disable ? 'fill-gray-500' : 'fill-white hover:fill-orange-300'}`;
+    const color_state = `cursor-pointer ${props?.disable ? 'fill-gray-500' : 'fill-white hover:fill-blue-500 active:fill-red-500'}`;
     switch (props.which) {
       case 'selection':
         return (
@@ -273,11 +276,21 @@ export const HeroIcons = (props: Props) => {
     }
   }
   return (
-    <do-me disabled={props?.disable} ref={ref} class={`flex flex-row ${props?.parentClassName}`} which={props.which}>
+    <do-me
+      disabled={props?.disable}
+      ref={ref}
+      class={`flex flex-row ${props?.parentClassName ? props?.parentClassName : ''}`}
+      which={props.which}
+    >
       {loadIcon()}
-      <Label slot="label" className={`cursor-pointer absolute bottom-8 ${showLabel ? '' : 'hidden'}`}>
-        {props?.label}
-      </Label>
+      {/* {props?.label && props?.label !== '' && (
+        <Label
+          slot="label"
+          className={`bg-blue-600 text-white py-1 px-2 left-2 cursor-pointer whitespace-pre-wrap ${showLabel ? '' : 'hidden'}`}
+        >
+          {props?.label}
+        </Label>
+      )} */}
     </do-me>
   );
 };
