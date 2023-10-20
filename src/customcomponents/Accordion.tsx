@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState, forwardRef, useImperativeHandle} from 'react';
 
-interface AccordionProps {
-  sections: { title: string; content: React.ReactNode }[];
+type AccordionProps = {
+  sections: {title: string; content: React.ReactNode}[];
   root?: boolean;
   className?: string;
   setDefaultIndex?: (e: number) => void;
-}
+};
 
-const Accordion: React.FC<AccordionProps> = ({ sections, root, className }) => {
-  const [activeSection, setActiveSection] = useState<number | null>(root ? 0 : null);
+export const Accordion = forwardRef((props: AccordionProps, ref) => {
+  const [activeSection, setActiveSection] = useState<number | null>(props?.root ? 0 : null);
 
   const toggleSection = (index: number) => {
     if (index === activeSection) {
@@ -17,15 +17,19 @@ const Accordion: React.FC<AccordionProps> = ({ sections, root, className }) => {
       setActiveSection(index);
     }
   };
+  function showIndex(e: number) {
+    setActiveSection((ee) => e);
+  }
 
+  useImperativeHandle(ref, () => ({
+    showIndex,
+  }));
   return (
-    <div className={'p-0 m-0 ' + className}>
-      {sections.map((section, index) => (
-        <div key={index} className={`p-0 m-0 ${root ? 'bg-box-root' : 'bg-box-child'}`}>
+    <div className={'p-0 m-0 ' + props?.className}>
+      {props?.sections?.map((section, index) => (
+        <div key={index} className={`p-0 m-0 ${props?.root ? 'bg-box-root' : 'bg-box-child'}`}>
           <div
-            className={`flex flex-row w-full acc-title cursor-pointer text-white rounded-sm p-2 m-0 hover:text-yellow-100 ${
-              index === activeSection ? 'active' : ''
-            }`}
+            className={`flex flex-row w-full acc-title cursor-pointer text-white rounded-sm p-2 m-0 hover:text-yellow-100 ${index === activeSection ? 'active' : ''}`}
             onClick={() => toggleSection(index)}
           >
             <div className="grow">{section.title}</div>
@@ -43,6 +47,4 @@ const Accordion: React.FC<AccordionProps> = ({ sections, root, className }) => {
       ))}
     </div>
   );
-};
-
-export default Accordion;
+});

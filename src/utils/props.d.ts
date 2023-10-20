@@ -55,6 +55,7 @@ export type AIOServerData = {
   image64: string;
   textdata: string;
   type: string;
+  timestamp?: number;
 };
 export type rf_data = {
   texture: number;
@@ -75,6 +76,7 @@ export type TAGnVERTICALALIGN = {
 
 export type CUSTOMSCRIPT = {
   name: string;
+  desc?: string;
   icon_path: string;
   executable?: boolean;
   script?: string;

@@ -1,7 +1,7 @@
 const path = require('path');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
-const version = '0.0.3';
+const version = '0.0.4';
 module.exports = (_env, arg) => {
   return {
     entry: './src/index.tsx',

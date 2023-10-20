@@ -1,26 +1,26 @@
-import { action, app, core, imaging } from 'photoshop';
-import { ActionDescriptor } from 'photoshop/dom/CoreModules';
-import React, { useEffect, useRef, useState } from 'react';
+import {action, app, core, imaging} from 'photoshop';
+import {ActionDescriptor} from 'photoshop/dom/CoreModules';
+import React, {useEffect, useRef, useState} from 'react';
 import useWebSocket from 'react-use-websocket';
 import Sval from 'sval';
-import { v4 as uuidv4 } from 'uuid';
-import { Button, Label, Textarea } from '../components';
-import Accordion from '../customcomponents/Accordion';
+import {v4 as uuidv4} from 'uuid';
+import {Button, Label, Textarea} from '../components';
+import {Accordion} from '../customcomponents/Accordion';
 import MainContainer from '../customcomponents/MainContainer';
-import { Tab } from '../customcomponents/Tab';
+import {Tab} from '../customcomponents/Tab';
 import '../index.css';
-import { HeroIcons } from '../interfaces/HeroIcons';
-import { placeImageOnCanvas } from '../utils/BPUtils';
-import { copyImageToInputFolder } from '../utils/IOUtils';
-import { _arrayBufferToBase64 } from '../utils/ImageUtils';
-import { executeCustomScripts } from '../utils/PhotoshopUtils';
-import { executed, executing, fetchObjectInfo, output_images, progress, server_type, status } from '../utils/ServerUtils';
-import { COMFYFOLDER, GetTokenFor, PickFolderFor, TEXTTOOLFOLDER, WORKFLOWFOLER } from '../utils/Token';
-import { BOUNDS, CUSTOMSCRIPT, InlineDialogContent, facerestoreProps } from '../utils/props';
+import {HeroIcons} from '../interfaces/HeroIcons';
+import {placeImageOnCanvas} from '../utils/BPUtils';
+import {copyImageToInputFolder} from '../utils/IOUtils';
+import {_arrayBufferToBase64} from '../utils/ImageUtils';
+import {executeCustomScripts} from '../utils/PhotoshopUtils';
+import {executed, executing, fetchObjectInfo, output_images, progress, server_type, status} from '../utils/ServerUtils';
+import {COMFYFOLDER, GetTokenFor, PickFolderFor, TEXTTOOLFOLDER, WORKFLOWFOLER} from '../utils/Token';
+import {BOUNDS, CUSTOMSCRIPT, InlineDialogContent, facerestoreProps} from '../utils/props';
 import FaceRestorePanel from './FaceRestorePanel';
 import ImageGenerator from './ImageGenerator';
 import ImagePanel from './ImagePanel';
-import InpaintingPanel, { ksamplerProps } from './InpaintingPanel';
+import InpaintingPanel, {ksamplerProps} from './InpaintingPanel';
 import PSUtilityPanel from './PSUtilityPanel';
 import WhatsAppPanel from './WhatsAppPanel';
 import WorkflowLoaderPanel from './WorkflowLoaderPanel';
@@ -29,6 +29,7 @@ import LoggerPanel from './LoggerPanel';
 const nodefs = require('fs');
 const WS = (url: string, callback) => {
   return useWebSocket(url, {
+    share: true,
     onOpen: () => callback(true),
     onClose: () => callback(false),
     shouldReconnect: (closeEvent) => {
@@ -63,7 +64,7 @@ export const MainPanel: React.FC = () => {
 
   const [IOFolder, setIOFolder] = useState(null);
   const [workflows, setWorkflows] = useState(null);
-  const [bounds, setBounds] = useState<BOUNDS>({ left: 0, top: 0, right: 0, bottom: 0 });
+  const [bounds, setBounds] = useState<BOUNDS>({left: 0, top: 0, right: 0, bottom: 0});
   const [sOpen, setSOpen] = useState(false);
   const [logs, setLogs] = useState('');
   const [status, setStatus] = useState(false);
@@ -77,6 +78,8 @@ export const MainPanel: React.FC = () => {
   const [WAText, setWAText] = useState(null);
   const [customScripts, setCustomScripts] = useState<CUSTOMSCRIPT[]>(null);
   const [customScriptsFolder, setCustomScriptsFolder] = useState(null);
+  const [activeIndex, setActiveIndex] = useState({tabindex: 0, accParent: 0, accChild: 0});
+
   const aio_server = WS('ws://localhost:7898/Server', (result) => {
     console.log('aio_server', result);
   });
@@ -98,14 +101,14 @@ export const MainPanel: React.FC = () => {
   });
 
   function writeDefault() {
-    nodefs.writeFileSync(config, JSON.stringify({ comfyui_only: true }), { encoding: 'utf-8' });
+    nodefs.writeFileSync(config, JSON.stringify({comfyui_only: true}), {encoding: 'utf-8'});
     location.reload();
   }
   function loadConfig() {
     try {
       const stat = nodefs.lstatSync(config);
       if (!stat.isFile()) writeDefault();
-      const conf = JSON.parse(nodefs.readFileSync(config, { encoding: 'utf-8' }));
+      const conf = JSON.parse(nodefs.readFileSync(config, {encoding: 'utf-8'}));
       setComfyUIOnly(conf.comfyui_only);
     } catch (error) {
       writeDefault();
@@ -153,10 +156,10 @@ export const MainPanel: React.FC = () => {
       await core
         .executeAsModal(
           async () => {
-            const _img = await imaging.getSelection({ documentID: app.activeDocument.id });
+            const _img = await imaging.getSelection({documentID: app.activeDocument.id});
             setBounds(_img.sourceBounds);
           },
-          { commandName: 'selection ' }
+          {commandName: 'selection '}
         )
         .catch((e) => console.log(e));
     }
@@ -167,11 +170,11 @@ export const MainPanel: React.FC = () => {
 
       if (descriptor?.to?._obj) {
         const o = descriptor?.to;
-        const b: BOUNDS = { top: o.top._value, left: o.left._value, right: o.right._value, bottom: o.bottom._value };
+        const b: BOUNDS = {top: o.top._value, left: o.left._value, right: o.right._value, bottom: o.bottom._value};
 
         setBounds(b);
       } else {
-        setBounds({ top: 0, left: 0, right: 0, bottom: 0 });
+        setBounds({top: 0, left: 0, right: 0, bottom: 0});
       }
     }
   }
@@ -189,7 +192,7 @@ export const MainPanel: React.FC = () => {
       const _comfy: any = await GetTokenFor(COMFYFOLDER);
       const input = await _comfy?.getEntry('input');
       const output = await _comfy?.getEntry('output');
-      setIOFolder({ input: input, output: output });
+      setIOFolder({input: input, output: output});
       await copyImageToInputFolder('plugin:/icons/default.png', input.nativePath, 'default.png');
     } catch (error) {
       const _comfyfolder = await showDialog('ComfyUI Folder', 'Pick comfyui Folder');
@@ -226,10 +229,7 @@ export const MainPanel: React.FC = () => {
 
   //processing websocket messages
   useEffect(() => {
-    const _bounds =
-      bounds.left == 0 && bounds.right == 0
-        ? { left: 0, top: 0, right: app?.activeDocument?.width, bottom: app?.activeDocument?.height }
-        : bounds;
+    const _bounds = bounds.left == 0 && bounds.right == 0 ? {left: 0, top: 0, right: app?.activeDocument?.width, bottom: app?.activeDocument?.height} : bounds;
     if (!comfyui_server.lastJsonMessage) return;
     const obj: any = comfyui_server.lastJsonMessage;
     if (Object.keys(obj).length <= 0) return;
@@ -301,7 +301,22 @@ export const MainPanel: React.FC = () => {
   const photoshopUtilsData = [
     {
       title: 'Photoshop Utility',
-      content: <PSUtilityPanel aioServer={aio_server} selectedLayer={selectLayer} receiveText={WAText} rootToken={thumbRoot} />,
+      content: (
+        <PSUtilityPanel
+          doScript={async (whichscript: string) => {
+            if (!whichscript) return;
+            const mscript = customScripts[customScripts.findIndex((e) => e.name.includes(whichscript))];
+
+            await executeCustomScripts(mscript, customScriptsFolder, interpreter);
+          }}
+          activatePanel={(tabIndex: number, accP: number, accC: number) => {
+            setActiveIndex((e) => ({tabindex: tabIndex, accParent: accP, accChild: accC}));
+          }}
+          selectedLayer={selectLayer}
+          receiveText={WAText}
+          rootToken={thumbRoot}
+        />
+      ),
     },
   ];
 
@@ -309,17 +324,7 @@ export const MainPanel: React.FC = () => {
   const accordionData = [
     {
       title: 'Workflow Loader',
-      content: (
-        <WorkflowLoaderPanel
-          uuid={uuid}
-          progress={status}
-          showDialog={showDialog}
-          isRunning={status}
-          bounds={bounds}
-          ioFolder={IOFolder}
-          workflows={workflows}
-        />
-      ),
+      content: <WorkflowLoaderPanel uuid={uuid} progress={status} showDialog={showDialog} isRunning={status} bounds={bounds} ioFolder={IOFolder} workflows={workflows} />,
     },
     {
       title: 'Face Restore',
@@ -385,7 +390,7 @@ export const MainPanel: React.FC = () => {
         <>
           <div className={`${comfyTab ? '' : 'hidden'}`}>
             <div className="text-white flex flex-row content-between w-full items-center z-10">
-              <div style={{ width: `${process}%` }} className="loading bg-black h-full bg-opacity-50 absolute top-0 w-full"></div>
+              <div style={{width: `${process}%`}} className="loading bg-black h-full bg-opacity-50 absolute top-0 w-full"></div>
               <div className="w-full acc-title text-base bg-red-600 flex flex-row content-between p-2 align-middle pr-10 h-auto">
                 <div className="text-white grow">{logs}</div>
                 <div className="">on queue : {queue}</div>
@@ -398,7 +403,7 @@ export const MainPanel: React.FC = () => {
     },
     {
       title: 'IMAGE',
-      content: <ImagePanel UIDialog={HandleUIDialog} rootToken={thumbRoot} aioServer={aio_server} />,
+      content: <ImagePanel UIDialog={HandleUIDialog} rootToken={thumbRoot} />,
     },
     {
       title: 'WHATSAPP',
@@ -489,6 +494,7 @@ export const MainPanel: React.FC = () => {
 
       <MainContainer className={`${showUILoader ? 'hidden' : ''}`}>
         <Tab
+          activateTab={activeIndex}
           content={TabContent}
           isComfy={(comfy) => {
             setComfyTab(comfy);
@@ -539,7 +545,10 @@ export const MainPanel: React.FC = () => {
                       parentClassName="px-1 py-2"
                       key={index}
                       label={value.name}
-                      setLabel={(e) => setCustomScriptTooltip((x) => e)}
+                      setLabel={(e) => {
+                        if (e === '') setCustomScriptTooltip((x) => e);
+                        else setCustomScriptTooltip((x) => value.name + ' -> ' + value.desc);
+                      }}
                       which="custom"
                       customPath={value.icon_path}
                       onClick={async (e) => {

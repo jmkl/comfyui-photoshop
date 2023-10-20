@@ -1,18 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { Button, Textfield } from '../components';
+import React, {useEffect, useState} from 'react';
+import {Button, Textfield} from '../components';
 import DropDrownPicker from '../customcomponents/DropDownPicker';
 import ReactPaginate from 'react-paginate';
 import Paginator from '../customcomponents/Paginator';
-import { getMilis } from '../utils/IOUtils';
-import { IMAGEITEMS, InlineDialogContent } from '../utils/props';
+import {getMilis} from '../utils/IOUtils';
+import {AIOServerData, IMAGEITEMS, InlineDialogContent} from '../utils/props';
 import OnlinePage from '../customcomponents/OnlinePage';
-import { HeroIcons } from '../interfaces/HeroIcons';
-import { SaveCurrentLayerAsSmartObject, getSmartObjectNativePath } from '../utils/PhotoshopUtils';
+import {HeroIcons} from '../interfaces/HeroIcons';
+import {SaveCurrentLayerAsSmartObject, getSmartObjectNativePath} from '../utils/PhotoshopUtils';
+import useWebSocket from 'react-use-websocket';
 
 type Props = {
   rootToken?: any;
   className?: string;
-  aioServer?: any;
+
   UIDialog?: (e: InlineDialogContent) => void;
   // sendJsonMessage: (message: string) => void;
   // lastJsonMessage: any;
@@ -47,6 +48,13 @@ export default function ImagePanel(props: Props) {
 
   const [isOnline, setIsOnline] = useState(false);
   const [searchImage, setSearchImage] = useState(null);
+  const socketUrl = 'ws://localhost:7898/Server';
+  const {sendJsonMessage, lastJsonMessage} = useWebSocket(socketUrl, {
+    share: true,
+    shouldReconnect: (closeEvent) => {
+      return true;
+    },
+  });
 
   function fetchCategory(category) {
     if (!tokenTextures) return;
@@ -64,9 +72,7 @@ export default function ImagePanel(props: Props) {
               name: p?.name,
               category: p?.category,
               favorite: p?.favorite,
-              thumb: `file:\\\\${tokenTextures?.nativePath}\\\.thumbnail\\${
-                category == 'Vector' ? p?.name?.replace('eps', 'jpg') : p?.name
-              }`,
+              thumb: `file:\\\\${tokenTextures?.nativePath}\\\.thumbnail\\${category == 'Vector' ? p?.name?.replace('eps', 'jpg') : p?.name}`,
             };
           }),
         });
@@ -95,7 +101,6 @@ export default function ImagePanel(props: Props) {
     switch (true) {
       case provider === image_provider[0]:
         setIsOnline(false);
-        console.log('update data', smartObjects?.content?.length);
         setCurrentEntry(() => smartObjects);
         break;
       case provider === image_provider[2]:
@@ -139,9 +144,9 @@ export default function ImagePanel(props: Props) {
     });
   }
   useEffect(() => {
-    if (!props?.aioServer?.lastJsonMessage) return;
-
-    switch (props?.aioServer?.lastJsonMessage?.type) {
+    if (!lastJsonMessage) return;
+    const message = lastJsonMessage as AIOServerData;
+    switch (message?.type) {
       case 'createthumb':
         loadSmartObjectFile();
         break;
@@ -149,7 +154,7 @@ export default function ImagePanel(props: Props) {
         loadSmartObjectFile();
         break;
     }
-  }, [props?.aioServer?.lastJsonMessage]);
+  }, [lastJsonMessage]);
   useEffect(() => {
     if (!props?.rootToken) return;
     props?.rootToken?.getEntry('texture').then(async (folder) => {
@@ -224,7 +229,7 @@ export default function ImagePanel(props: Props) {
                 } else {
                   SaveCurrentLayerAsSmartObject(tokenSmartObject, allSmartObject, saveName).then((result: string) => {
                     if (result) {
-                      props?.aioServer?.sendJsonMessage({
+                      sendJsonMessage({
                         type: 'createthumb',
                         fromserver: false,
                         data: result,
@@ -271,7 +276,7 @@ export default function ImagePanel(props: Props) {
                       }
                     })
                     .then((data) => {
-                      const entrytexture_cat = { ...entryTextureCategory };
+                      const entrytexture_cat = {...entryTextureCategory};
                       entrytexture_cat.content[entrytexture_cat.content.findIndex((e) => e.name === item.name)].favorite = !item.favorite;
                       setEntryTextureCategory(entrytexture_cat);
                     });
@@ -288,7 +293,7 @@ export default function ImagePanel(props: Props) {
                   title: 'Add to Favorite',
                   message: `are u sure you wanna delete \"${itemname.name}\" from your current library??`,
                   onOk: (eps) => {
-                    props?.aioServer?.sendJsonMessage({
+                    sendJsonMessage({
                       type: 'deletethumb',
                       fromserver: false,
                       data: result,

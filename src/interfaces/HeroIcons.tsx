@@ -1,8 +1,8 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Label } from '../components';
+import React, {useRef, useEffect, useState} from 'react';
+import {Label} from '../components';
 
 export interface IconClickEvent extends globalThis.Event {
-  readonly target: (EventTarget & { which: string }) | null;
+  readonly target: (EventTarget & {which: string}) | null;
   readonly which: string;
   stopPropagation(): void;
 }
@@ -276,12 +276,7 @@ export const HeroIcons = (props: Props) => {
     }
   }
   return (
-    <do-me
-      disabled={props?.disable}
-      ref={ref}
-      class={`flex flex-row ${props?.parentClassName ? props?.parentClassName : ''}`}
-      which={props.which}
-    >
+    <do-me disabled={props?.disable} ref={ref} class={`flex flex-row ${props?.parentClassName ? props?.parentClassName : ''}`} which={props.which}>
       {loadIcon()}
       {/* {props?.label && props?.label !== '' && (
         <Label

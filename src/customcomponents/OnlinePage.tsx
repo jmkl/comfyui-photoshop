@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { Md5 } from 'ts-md5';
-import { insertLinkedImage } from '../utils/PhotoshopUtils';
-import { InlineDialogContent } from '../utils/props';
+import React, {useEffect, useState} from 'react';
+import {Md5} from 'ts-md5';
+import {insertLinkedImage} from '../utils/PhotoshopUtils';
+import {InlineDialogContent} from '../utils/props';
 type Props = {
   keyword?: string;
   onlineToken?: any;
@@ -12,11 +12,10 @@ export default function OnlinePage(props: Props) {
   const [images, setImages] = useState(null);
   const [currentKeyword, setCurrentKeyword] = useState('');
 
-  const stockurl = (keyword: string) =>
-    encodeURI(`https://app.stocksolo.com/search?search=${keyword}&skipVendors[0]=adobe&skipVendors[1]=pixabay&page=`);
+  const stockurl = (keyword: string, offset: string) => encodeURI(`https://app.stocksolo.com/search?search=${keyword}&skipVendors[0]=adobe&skipVendors[1]=pixabay&page=${offset}`);
 
   function processOnlineImages(keyword: string) {
-    const _url = stockurl(keyword + itemOffset);
+    const _url = stockurl(keyword, itemOffset.toString());
     console.log(_url);
     fetch(_url)
       .then((r) => {
@@ -24,7 +23,7 @@ export default function OnlinePage(props: Props) {
       })
       .then((d) => {
         let content = d?.items?.map((d) => {
-          return { name: d?.source, thumb: d?.preview?.url, url: d?.fullResolution?.url };
+          return {name: d?.source, thumb: d?.preview?.url, url: d?.fullResolution?.url};
         });
         setImages(content);
       });
@@ -47,8 +46,8 @@ export default function OnlinePage(props: Props) {
                 if (result.ok) return result.arrayBuffer();
               })
               .then(async (buffer) => {
-                const new_jpeg = await props?.onlineToken?.createFile(filename, { overwrite: true });
-                await new_jpeg.write(buffer, { format: require('uxp').storage.formats.binary }).then(async () => {
+                const new_jpeg = await props?.onlineToken?.createFile(filename, {overwrite: true});
+                await new_jpeg.write(buffer, {format: require('uxp').storage.formats.binary}).then(async () => {
                   await insertLinkedImage(new_jpeg, filename);
                   resolve(new_jpeg);
                 });

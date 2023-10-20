@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Checkbox, Label, Slider, Textarea, Textfield } from '../components';
+import React, {useCallback, useEffect, useState} from 'react';
+import {Button, Checkbox, Label, Slider, Textarea, Textfield} from '../components';
 import {
   ColorBalanceProcessing,
   IsApplied,
@@ -18,23 +18,25 @@ import {
   showThumbnailTag,
 } from '../utils/PhotoshopUtils';
 import DropDrownPicker from '../customcomponents/DropDownPicker';
-import Accordion from '../customcomponents/Accordion';
-import { calculateNested, findChannel, getMaxNumberofName } from '../utils/StringUtils';
-import { MSpan } from '../customcomponents/MSpan';
-import { GetFolder, TEMPLATEINDEX } from '../utils/Token';
-import { HeroIcons } from '../interfaces/HeroIcons';
-import { AIOServerData, TAGnVERTICALALIGN, TextMode, rf_data } from '../utils/props';
-import { app, core } from 'photoshop';
-import { ADJLAYER, ALIGN, STORAGE_WITH_TAG, align_btn, default_color_balance, default_raw_filter } from '../utils/constant';
+import {Accordion} from '../customcomponents/Accordion';
+import {calculateNested, findChannel, getMaxNumberofName} from '../utils/StringUtils';
+import {MSpan} from '../customcomponents/MSpan';
+import {GetFolder, TEMPLATEINDEX} from '../utils/Token';
+import {HeroIcons} from '../interfaces/HeroIcons';
+import {AIOServerData, TAGnVERTICALALIGN, TextMode, rf_data} from '../utils/props';
+import {app, core} from 'photoshop';
+import {ADJLAYER, ALIGN, STORAGE_WITH_TAG, align_btn, default_color_balance, default_raw_filter} from '../utils/constant';
 import ColorTools from './ColorTools';
 import DropDownPicker from '../customcomponents/DropDownPicker';
-import { Layer } from 'photoshop/dom/Layer';
+import {Layer} from 'photoshop/dom/Layer';
+import useWebSocket from 'react-use-websocket';
 const nodefs = require('fs');
 type Props = {
   selectedLayer?: any;
   rootToken?: any;
   receiveText?: string;
-  aioServer: any;
+  doScript?: (scriptname: string) => void;
+  activatePanel?: (tabIndex: number, parentAccordion: number, childAccordion: number) => void;
 };
 
 export default function PSUtilityPanel(props: Props) {
@@ -44,10 +46,17 @@ export default function PSUtilityPanel(props: Props) {
   const [cbMode, setCbMode] = useState(1);
   const [savePanel, showSavePanel] = useState(false);
   const [confName, setConfName] = useState('');
-  const [upRF, setUpRF] = useState({ 'rf': false, 'cb': false });
+  const [upRF, setUpRF] = useState({'rf': false, 'cb': false});
   const [configContent, setConfigContent] = useState(null);
   const [currentRFConfig, setCurrentRFConfig] = useState(null);
-
+  const accRef = React.useRef(null);
+  const socketUrl = 'ws://localhost:7898/Server';
+  const {sendJsonMessage, lastJsonMessage} = useWebSocket(socketUrl, {
+    share: true,
+    shouldReconnect: (closeEvent) => {
+      return true;
+    },
+  });
   //#region ONCLICK AND SLIDER
 
   const upRFCallback = useCallback(
@@ -87,7 +96,7 @@ export default function PSUtilityPanel(props: Props) {
           data: RAWFilter,
         },
       ]),
-      { encoding: 'utf-8' }
+      {encoding: 'utf-8'}
     );
   }
   //#endregion
@@ -106,19 +115,19 @@ export default function PSUtilityPanel(props: Props) {
       newData = d;
     } else {
       if (exist > -1) conf_name = conf_name + `(${exist + 1})`;
-      newData = [...data, { name: conf_name, data: RAWFilter }];
+      newData = [...data, {name: conf_name, data: RAWFilter}];
     }
 
-    nodefs.writeFileSync(rawfilter_config_file, JSON.stringify(newData), { encoding: 'utf-8' });
+    nodefs.writeFileSync(rawfilter_config_file, JSON.stringify(newData), {encoding: 'utf-8'});
     setConfigContent(newData);
   }
   useEffect(() => {
     let config_content: any;
     try {
-      config_content = nodefs.readFileSync(rawfilter_config_file, { encoding: 'utf-8' });
+      config_content = nodefs.readFileSync(rawfilter_config_file, {encoding: 'utf-8'});
     } catch (error) {
       writeDefault();
-      config_content = nodefs.readFileSync(rawfilter_config_file, { encoding: 'utf-8' });
+      config_content = nodefs.readFileSync(rawfilter_config_file, {encoding: 'utf-8'});
     }
     setConfigContent(JSON.parse(config_content));
     setRAWFilter(default_raw_filter);
@@ -136,7 +145,6 @@ export default function PSUtilityPanel(props: Props) {
     RawFilterProcessing(result as rf_data);
   }, [RAWFilter]);
   useEffect(() => {
-    console.log('update colorbalance');
     if (!upRF['cb']) return;
     const result = colorBalance.reduce((accumulator, item) => {
       accumulator[item.name] = item.value;
@@ -233,6 +241,7 @@ export default function PSUtilityPanel(props: Props) {
   const [templateName, setTemplateName] = useState(null);
   const [withTag, setWithTag] = useState(JSON.parse(localStorage.getItem(STORAGE_WITH_TAG)));
   const [vertAlign, setVertAlign] = useState(false);
+  const [messageHistory, setMessageHistory] = useState(null);
   function handleOnInput(e) {
     let textLen = e.target.value.split('\r');
     const add = calculateNested(textLen);
@@ -243,7 +252,7 @@ export default function PSUtilityPanel(props: Props) {
 
     const data = [];
     for (const text of e.target.value.trim().split('\r')) {
-      data.push({ mode: 0, text: text });
+      data.push({mode: 0, text: text});
     }
     setCurrentText(data);
   }
@@ -267,40 +276,44 @@ export default function PSUtilityPanel(props: Props) {
   }, [props.rootToken]);
 
   async function handleHotkeys(params: string) {
-    const tagvert: TAGnVERTICALALIGN = { tag: withTag, vertical_align: vertAlign };
+    const tagvert: TAGnVERTICALALIGN = {tag: withTag, vertical_align: vertAlign};
     switch (params) {
+      case 'rawfilter':
+        props?.activatePanel(0, 0, 1);
+        accRef?.current?.showIndex(1);
+        break;
       case 'save':
-        handleSavingFile();
+        await handleSavingFile();
         break;
       case 'newdoc':
-        createNewDoc();
+        await createNewDoc();
         break;
       case 'topleft':
-        processHotkey(tagvert, align_btn.tl);
+        await processHotkey(tagvert, align_btn.tl);
         break;
       case 'toptop':
-        processHotkey(tagvert, align_btn.tt);
+        await processHotkey(tagvert, align_btn.tt);
         break;
       case 'topright':
-        processHotkey(tagvert, align_btn.tr);
+        await processHotkey(tagvert, align_btn.tr);
         break;
       case 'midleft':
-        processHotkey(tagvert, align_btn.ml);
+        await processHotkey(tagvert, align_btn.ml);
         break;
       case 'midmid':
-        processHotkey(tagvert, align_btn.mm);
+        await processHotkey(tagvert, align_btn.mm);
         break;
       case 'midright':
-        processHotkey(tagvert, align_btn.mr);
+        await processHotkey(tagvert, align_btn.mr);
         break;
       case 'botleft':
-        processHotkey(tagvert, align_btn.bl);
+        await processHotkey(tagvert, align_btn.bl);
         break;
       case 'botbot':
-        processHotkey(tagvert, align_btn.bm);
+        await processHotkey(tagvert, align_btn.bm);
         break;
       case 'botright':
-        processHotkey(tagvert, align_btn.br);
+        await processHotkey(tagvert, align_btn.br);
         break;
       case 'LEFT':
         await alignLayers(ALIGN.LEFT, false);
@@ -312,38 +325,38 @@ export default function PSUtilityPanel(props: Props) {
         await alignLayers(ALIGN.RIGHT, false);
         break;
       case 'adj_curves':
-        applyAdjustmentLayer(ADJLAYER.CURVES);
+        await applyAdjustmentLayer(ADJLAYER.CURVES);
         break;
       case 'adj_huesaturation':
-        applyAdjustmentLayer(ADJLAYER.HUESATURATION);
+        await applyAdjustmentLayer(ADJLAYER.HUESATURATION);
         break;
       case 'adj_exposure':
-        applyAdjustmentLayer(ADJLAYER.EXPOSURE);
+        await applyAdjustmentLayer(ADJLAYER.EXPOSURE);
         break;
       case 'adj_colorbalance':
-        applyAdjustmentLayer(ADJLAYER.COLORBALANCE);
+        await applyAdjustmentLayer(ADJLAYER.COLORBALANCE);
         break;
       case 'adj_gradientmap':
-        applyAdjustmentLayer(ADJLAYER.GRADIENTMAP);
+        await applyAdjustmentLayer(ADJLAYER.GRADIENTMAP);
         break;
       case 'adj_lut':
-        applyAdjustmentLayer(ADJLAYER.LUT);
+        await applyAdjustmentLayer(ADJLAYER.LUT);
         break;
       case 'scalelayer':
-        processHotkey(tagvert, 'SCALE');
+        await processHotkey(tagvert, 'SCALE');
         break;
       case 'deleteandfill':
-        await require('photoshop').core.performMenuCommand({ commandID: 5280 });
+        await require('photoshop').core.performMenuCommand({commandID: 5280});
         break;
       case 'SCALE':
-        processHotkey(tagvert, 'SCALE');
+        await processHotkey(tagvert, 'SCALE');
         break;
       case 'TAGSCALE':
-        processHotkey(tagvert, 'TAGSCALE');
+        await processHotkey(tagvert, 'TAGSCALE');
         break;
 
       case 'deleteandfill':
-        core.executeAsModal(
+        await core.executeAsModal(
           async () => {
             await app.batchPlay(
               [
@@ -355,14 +368,14 @@ export default function PSUtilityPanel(props: Props) {
               {}
             );
           },
-          { commandName: 'delete n fill' }
+          {commandName: 'delete n fill'}
         );
     }
   }
   const [tagLayers, setTagLayers] = useState<Layer[]>(null);
   function checkTagLayers() {
     const tags = getTagLayers();
-    if (tags && tags.length > 0) setTagLayers([{ name: 'None', id: -1 }, ...tags]);
+    if (tags && tags.length > 0) setTagLayers([{name: 'None', id: -1}, ...tags]);
     else setTagLayers(null);
   }
   async function handleSavingFile() {
@@ -373,7 +386,6 @@ export default function PSUtilityPanel(props: Props) {
       let message;
 
       if (app.activeDocument.title.includes('Untitled')) {
-        console.log(channel_token);
         let num = 0;
         const files = await channel_token.getEntries();
         let max_num = getMaxNumberofName(files);
@@ -385,10 +397,9 @@ export default function PSUtilityPanel(props: Props) {
       } else {
         message = null;
       }
-      console.log(message);
 
       if (message) {
-        props?.aioServer?.sendJsonMessage({
+        sendJsonMessage({
           type: 'filepath',
           channel: channel,
           fromserver: false,
@@ -398,12 +409,20 @@ export default function PSUtilityPanel(props: Props) {
       }
     }
   }
+  useEffect(() => {
+    if (messageHistory) {
+      return;
+      const message = messageHistory;
+    }
+  }, [messageHistory]);
 
   /**
    * ?HOTKEYS
    */
   useEffect(() => {
-    const message = props?.aioServer?.lastJsonMessage as AIOServerData;
+    if (lastJsonMessage === null) return;
+
+    let message = lastJsonMessage as AIOServerData;
     if (message?.fromserver) {
       switch (message?.type) {
         case 'save':
@@ -423,21 +442,20 @@ export default function PSUtilityPanel(props: Props) {
 
           break;
         case 'bp':
+          props?.doScript(message.data);
           break;
         case 'hotkey':
           handleHotkeys(message.data);
           break;
-        default:
-          break;
       }
     }
-  }, [props?.aioServer?.lastJsonMessage]);
+  }, [lastJsonMessage]);
 
   useEffect(() => {
     if (props?.receiveText) {
       const data = [];
       for (const text of props?.receiveText.trim().split('\r')) {
-        data.push({ mode: 0, text: text });
+        data.push({mode: 0, text: text});
       }
       setCurrentText(data);
     }
@@ -506,7 +524,7 @@ export default function PSUtilityPanel(props: Props) {
                 setShowSpan(true);
               }}
               onChange={() => {}}
-              style={{ height: `${lineCount * 16 + 6}px`, minHeight: '48px' }}
+              style={{height: `${lineCount * 16 + 6}px`, minHeight: '48px'}}
               className="w-full mb-2"
               value={currentText.map((e) => e.text).join('\r') || ''}
               onInput={handleOnInput}
@@ -529,7 +547,7 @@ export default function PSUtilityPanel(props: Props) {
                 await applyTemplate(result, currentText, withTag);
                 const emblems = currentText.filter((e) => e.mode === 1);
                 for (const emblem of emblems) {
-                  props?.aioServer?.sendJsonMessage({
+                  sendJsonMessage({
                     type: 'createemblem',
                     fromserver: false,
                     data: 'http://make.me',
@@ -549,9 +567,9 @@ export default function PSUtilityPanel(props: Props) {
                   <HeroIcons
                     key={index}
                     which={align_btn[key]}
-                    onClick={(e) => {
-                      const tagvert: TAGnVERTICALALIGN = { tag: withTag, vertical_align: vertAlign };
-                      processHotkey(tagvert, align_btn[key]);
+                    onClick={async (e) => {
+                      const tagvert: TAGnVERTICALALIGN = {tag: withTag, vertical_align: vertAlign};
+                      await processHotkey(tagvert, align_btn[key]);
                     }}
                   />
                 );
@@ -716,7 +734,7 @@ export default function PSUtilityPanel(props: Props) {
   ];
   return (
     <div className="flex flex-col w-full">
-      <Accordion sections={sections} />
+      <Accordion ref={accRef} sections={sections} />
     </div>
   );
 }

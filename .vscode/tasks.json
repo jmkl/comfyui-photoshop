@@ -6,7 +6,6 @@
         }
     },
     "tasks": [
-        
         {
             "type": "shell",
             "command": "pnpm run build",
@@ -19,19 +18,18 @@
                 "reveal": "silent",
                 "revealProblems": "onProblem",
                 "close": true
-            }
+            },
+            "problemMatcher": []
         },
         {
             "label": "RELEASE",
-            "type":"shell",
-            "command":"uxp plugin package --manifest .\\dist\\manifest.json --outputPath .\\build",
-            
-            "dependsOn":[
+            "type": "shell",
+            "command": "uxp plugin package --manifest .\\dist\\manifest.json --outputPath .\\build",
+            "dependsOn": [
                 "PACKTORELEASE"
-            ],"group": {
-                "kind": "build",
-                "isDefault": false
-            },
+            ],
+            "group": "build",
+            "problemMatcher": []
         },
         {
             "type": "shell",
@@ -46,7 +44,6 @@
                 "revealProblems": "onProblem",
                 "close": true
             }
-        },
-    
+        }
     ],
 }

@@ -1,10 +1,16 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 
 type Props = {
-  content: { title: string; content: React.ReactNode }[];
+  activateTab: {tabindex: number; accParent: number; accChild: number};
+  content: {title: string; content: React.ReactNode}[];
   isComfy?: (e: boolean) => void;
 };
-export const Tab: React.FC<Props> = ({ content, isComfy }) => {
+export const Tab: React.FC<Props> = ({content, isComfy, activateTab}) => {
+  useEffect(() => {
+    if (activateTab) {
+      setActiveIndex(activateTab.tabindex);
+    }
+  }, [activateTab]);
   const [activeIndex, setActiveIndex] = useState(0);
   function handleClick(index: number) {
     setActiveIndex(index);
@@ -17,9 +23,7 @@ export const Tab: React.FC<Props> = ({ content, isComfy }) => {
           return (
             <p
               key={index}
-              className={`px-2 py-1 cursor-pointer text-white hover:text-yellow-300 hover:bg-box-child ${
-                activeIndex === index ? 'bg-box-root' : ''
-              }`}
+              className={`px-2 py-1 cursor-pointer text-white hover:text-yellow-300 hover:bg-box-child ${activeIndex === index ? 'bg-box-root' : ''}`}
               onClick={() => handleClick(index)}
             >
               {value.title}
