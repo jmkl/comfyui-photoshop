@@ -1,16 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { STORAGE_WORKFLOWFOLDER } from '../utils/constant';
+import React, {useEffect, useRef, useState} from 'react';
+import {STORAGE_WORKFLOWFOLDER} from '../utils/constant';
 import DropDrownPicker from '../customcomponents/DropDownPicker';
-import { Button, Label, Slider, Textfield } from '../components';
-import { InterruptServer, fetchObjectInfo, sendWorkflowDataToServer } from '../utils/ServerUtils';
-import { HeroIcons } from '../interfaces/HeroIcons';
-import { BOUNDS } from '../utils/props';
-import { PickImageDialog } from '../utils/Token';
-import { copyImageToInputFolder } from '../utils/IOUtils';
-import { saveSelectionToImage } from '../utils/BPUtils';
+import {Button, Label, Slider, Textfield} from '../components';
+import {InterruptServer, fetchObjectInfo, sendWorkflowDataToServer} from '../utils/ServerUtils';
+import {HeroIcons} from '../interfaces/HeroIcons';
+import {BOUNDS} from '../utils/props';
+import {PickImageDialog} from '../utils/Token';
+import {copyImageToInputFolder, isValidUrl} from '../utils/IOUtils';
+import {downloadImage, saveSelectionToImage} from '../utils/BPUtils';
 import MTextArea from '../customcomponents/MTextArea';
-import { log } from '../utils/Log';
-import { SeedWidget } from '../customcomponents/SeedWidget';
+import {log} from '../utils/Log';
+import {SeedWidget} from '../customcomponents/SeedWidget';
 
 const fs = require('uxp').storage.localFileSystem;
 
@@ -63,7 +63,7 @@ export default function WorkflowLoaderPanel(props: Props) {
   const [showcard, setShowCard] = useState(-1);
   const [btnState, setBtnState] = useState<STATE>(STATE.disable);
   const [items, setItems] = useState<listItems[]>([]);
-  const ImageLoaderNode = ['LoadImage', 'LoadResizeImageMask'];
+  const ImageLoaderNode = ['LoadImage', 'LoadResizeImageMask', 'LoadImageFace', 'Image'];
   const SeedWidgetRef = useRef(null);
 
   async function loadWorkflowFiles(e: any) {
@@ -88,13 +88,13 @@ export default function WorkflowLoaderPanel(props: Props) {
       let contents = result[_class_type]['input']['required'];
       const optional = result[_class_type]['input']['optional'];
       if (optional !== undefined) {
-        contents = { ...contents, ...optional };
+        contents = {...contents, ...optional};
       }
-      return { key: _class_type, value: contents };
+      return {key: _class_type, value: contents};
     });
 
     const infoArray = await Promise.all(promises);
-    const infoObject = infoArray.reduce((acc, { key, value }) => {
+    const infoObject = infoArray.reduce((acc, {key, value}) => {
       acc[key] = value;
       return acc;
     }, {});
@@ -296,9 +296,9 @@ export default function WorkflowLoaderPanel(props: Props) {
       return (
         <div className="w-full" key={index}>
           {
-            <div className="content-card box-bg p-2 mb-2">
+            <div className="content-card box-bg p-1 mb-1">
               {/* this is parent. do something */}
-              <div className="w-full text-white acc-title text-sm cursor-pointer flex flex-row content-between">
+              <div className="w-full text-white acc-title-comfy text-xxs cursor-pointer flex flex-row content-between">
                 <div
                   className="grow"
                   onClick={(e) => {
@@ -356,11 +356,35 @@ export default function WorkflowLoaderPanel(props: Props) {
                                 <div className="flex">
                                   <HeroIcons
                                     className="mx-2"
+                                    which="download"
+                                    onClick={async (e) => {
+                                      const content = await navigator.clipboard.readText();
+                                      const url = content['text/plain'];
+                                      console.log(url);
+                                      if (!isValidUrl(url)) return;
+                                      props?.showDialog('Download Image', 'download image from clipboard').then(async (ok) => {
+                                        if (ok) {
+                                          const r = await fetch(url);
+                                          if (r.ok) {
+                                            await downloadImage(props?.ioFolder, await r.arrayBuffer(), r.headers.get('content-type'), card_title).then((result) => {
+                                              if (result) {
+                                                card_item_object[0].push(result);
+                                                changeValueDropDown(index, child_index, result, card_item_object[0]);
+                                                handleInputChange(keyname, value, result);
+                                              }
+                                            });
+                                          }
+                                        }
+                                      });
+                                    }}
+                                  />
+                                  <HeroIcons
+                                    className="mr-2"
                                     which="loadimage"
                                     onClick={(e) => {
                                       PickImageDialog().then((result) => {
                                         const path = items[items.findIndex((e) => e.id == index && e.sub_id == child_index)].path;
-                                        copyImageToInputFolder(result.nativePath, path).then((result: string) => {
+                                        copyImageToInputFolder(result.nativePath, path, null, card_title).then((result: string) => {
                                           card_item_object[0].push(result);
                                           changeValueDropDown(index, child_index, result, card_item_object[0]);
                                           handleInputChange(keyname, value, result);
@@ -374,7 +398,7 @@ export default function WorkflowLoaderPanel(props: Props) {
                                     onClick={(e) => {
                                       props?.showDialog('Crop this', 'Saving cropped selection as input image').then((ok) => {
                                         if (ok) {
-                                          saveSelectionToImage(props?.bounds, props?.ioFolder).then((result) => {
+                                          saveSelectionToImage(props?.bounds, props?.ioFolder, card_title).then((result) => {
                                             if (result) {
                                               card_item_object[0].push(result);
                                               changeValueDropDown(index, child_index, result, card_item_object[0]);
@@ -422,6 +446,7 @@ export default function WorkflowLoaderPanel(props: Props) {
   function handleGenerateClick(e: globalThis.Event) {
     if (props?.progress) {
       InterruptServer();
+      return;
     }
 
     sendWorkflowDataToServer(WF, props.uuid);
@@ -450,15 +475,10 @@ export default function WorkflowLoaderPanel(props: Props) {
           Load
         </Button>
       </div>
-      <div className="content mt-2">{WF && cardInfo && renderCard()}</div>
-      <Button
-        variant={`${props?.progress ? 'warning' : 'cta'}`}
-        disabled={btnState == STATE.disable}
-        className="rounded-md"
-        onClick={handleGenerateClick}
-      >
+      <Button variant={`${props?.progress ? 'warning' : 'cta'}`} disabled={btnState == STATE.disable} className="rounded-md mt-2" onClick={handleGenerateClick}>
         Generate
       </Button>
+      <div className="content mt-2">{WF && cardInfo && renderCard()}</div>
     </div>
   );
 }

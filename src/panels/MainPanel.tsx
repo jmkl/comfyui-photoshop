@@ -233,53 +233,58 @@ export const MainPanel: React.FC = () => {
     if (!comfyui_server.lastJsonMessage) return;
     const obj: any = comfyui_server.lastJsonMessage;
     if (Object.keys(obj).length <= 0) return;
-    const type = obj['type'];
-    const data = obj['data'];
 
-    setStatus(type === 'progress' || obj['data']?.status?.exec_info?.queue_remaining > 0 ? true : false);
+    try {
+      const type = obj['type'];
+      const data = obj['data'];
 
-    switch (true) {
-      case type === server_type.status:
-        const _status: status = obj;
-        const queue = _status.data.status.exec_info.queue_remaining;
-        setQueue(queue != null ? queue : 0);
-        break;
-      case type === server_type.progress:
-        setStatus(true);
-        const _obj: progress = obj;
-        const progression = (_obj?.data?.value / _obj?.data?.max) * 100;
-        setProcess(progression);
-        break;
-      case type === server_type.execution_start:
-        setStatus(true);
-        setLogs(type);
-        break;
-      case type === server_type.execution_cached:
-        break;
-      case type === server_type.executing:
-        const _exeing: executing = obj;
-        if (_exeing.data.node != null) {
-          setLogs(type);
+      setStatus(type === 'progress' || obj['data']?.status?.exec_info?.queue_remaining > 0 ? true : false);
+
+      switch (true) {
+        case type === server_type.status:
+          const _status: status = obj;
+          const queue = _status.data.status.exec_info.queue_remaining;
+          setQueue(queue != null ? queue : 0);
+          break;
+        case type === server_type.progress:
           setStatus(true);
-        } else {
+          const _obj: progress = obj;
+          const progression = (_obj?.data?.value / _obj?.data?.max) * 100;
+          setProcess(progression);
+          break;
+        case type === server_type.execution_start:
+          setStatus(true);
+          setLogs(type);
+          break;
+        case type === server_type.execution_cached:
+          break;
+        case type === server_type.executing:
+          const _exeing: executing = obj;
+          if (_exeing.data.node != null) {
+            setLogs(type);
+            setStatus(true);
+          } else {
+            setStatus(false);
+          }
+
+          break;
+        case type === server_type.executed:
+          setLogs('Done!');
           setStatus(false);
-        }
+          setProcess(0);
+          if (previewImage.length > 1) {
+            setPreviewImage(previewImage.slice(-1));
+          }
+          const _done: executed = obj;
+          const all_files: output_images[] = _done?.data?.output?.images;
+          for (const files of all_files) {
+            placeImageOnCanvas(files?.filename, IOFolder, _bounds, false);
+          }
 
-        break;
-      case type === server_type.executed:
-        setLogs('Done!');
-        setStatus(false);
-        setProcess(0);
-        if (previewImage.length > 1) {
-          setPreviewImage(previewImage.slice(-1));
-        }
-        const _done: executed = obj;
-        const all_files: output_images[] = _done?.data?.output?.images;
-        for (const files of all_files) {
-          placeImageOnCanvas(files?.filename, IOFolder, _bounds, false);
-        }
-
-        break;
+          break;
+      }
+    } catch (error) {
+      console.log(error);
     }
   }, [comfyui_server.lastJsonMessage]);
 

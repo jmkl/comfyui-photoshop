@@ -1,0 +1,164 @@
+{
+  "1": {
+    "inputs": {
+      "image": "4be30l.png",
+      "choose file to upload": "image"
+    },
+    "class_type": "LoadImage"
+  },
+  "3": {
+    "inputs": {
+      "image": "d5x9g.png",
+      "method": "height",
+      "value": 512,
+      "choose file to upload": "image"
+    },
+    "class_type": "LoadResizeImageMask"
+  },
+  "4": {
+    "inputs": {
+      "seed": 1743470583900689,
+      "steps": 20,
+      "cfg": 8,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": 0.5,
+      "model": [
+        "150",
+        0
+      ],
+      "positive": [
+        "154",
+        0
+      ],
+      "negative": [
+        "156",
+        0
+      ],
+      "latent_image": [
+        "157",
+        0
+      ]
+    },
+    "class_type": "KSampler"
+  },
+  "149": {
+    "inputs": {
+      "ipadapter_file": "ip-adapter-plus-face_sd15.bin"
+    },
+    "class_type": "IPAdapterModelLoader"
+  },
+  "150": {
+    "inputs": {
+      "weight": 0.8,
+      "noise": 0.33,
+      "ipadapter": [
+        "149",
+        0
+      ],
+      "clip_vision": [
+        "151",
+        0
+      ],
+      "image": [
+        "1",
+        0
+      ],
+      "model": [
+        "153",
+        0
+      ]
+    },
+    "class_type": "IPAdapterApply"
+  },
+  "151": {
+    "inputs": {
+      "clip_name": "model_sd15_ipadapter_plus_clipvision.safetensors"
+    },
+    "class_type": "CLIPVisionLoader"
+  },
+  "152": {
+    "inputs": {
+      "enabled": true,
+      "swap_model": "inswapper_128.onnx",
+      "facedetection": "retinaface_resnet50",
+      "face_restore_model": "GFPGANv1.4.pth",
+      "detect_gender_source": "no",
+      "detect_gender_input": "no",
+      "source_faces_index": "0",
+      "input_faces_index": "0",
+      "console_log_level": 0,
+      "source_image": [
+        "1",
+        0
+      ],
+      "input_image": [
+        "158",
+        0
+      ]
+    },
+    "class_type": "ReActorFaceSwap"
+  },
+  "153": {
+    "inputs": {
+      "ckpt_name": "dreamshaper_8.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple"
+  },
+  "154": {
+    "inputs": {
+      "text": "",
+      "clip": [
+        "153",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode"
+  },
+  "156": {
+    "inputs": {
+      "text": "blurry, nipples, hat, cap, fat, embedding:BadDream, gray hair",
+      "clip": [
+        "153",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode"
+  },
+  "157": {
+    "inputs": {
+      "pixels": [
+        "3",
+        0
+      ],
+      "vae": [
+        "153",
+        2
+      ]
+    },
+    "class_type": "VAEEncode"
+  },
+  "158": {
+    "inputs": {
+      "samples": [
+        "4",
+        0
+      ],
+      "vae": [
+        "153",
+        2
+      ]
+    },
+    "class_type": "VAEDecode"
+  },
+  "159": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "152",
+        0
+      ]
+    },
+    "class_type": "SaveImage"
+  }
+}

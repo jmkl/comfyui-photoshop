@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, {useEffect, useRef} from 'react';
 
 namespace Spectrum {
   export interface DropdownEvent extends globalThis.Event {
-    readonly target: (EventTarget & { selectedIndex: number }) | null;
+    readonly target: (EventTarget & {selectedIndex: number}) | null;
   }
 }
 
@@ -17,6 +17,7 @@ type Props = {
   quiet?: boolean;
   placeholder?: string;
   selectedIndex?: number;
+  onSelectIndex?: (selectedIndex: number) => void;
 };
 
 declare global {
@@ -58,14 +59,27 @@ export default function Dropdown(props: Props) {
   const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const dispatchChange = (e: Event) => props.onChange?.(e as Spectrum.DropdownEvent);
+    const dispatchChange = (e: Event) => {
+      const selectedIndex = (e.target as any).selectedIndex;
+      props.onSelectIndex?.(selectedIndex);
+      props.onChange?.(e as Spectrum.DropdownEvent);
+    };
 
     ref.current?.addEventListener('change', dispatchChange);
+
     return () => {
       ref.current?.removeEventListener('change', dispatchChange);
     };
-  }, [props.onChange]);
+  }, [props.onChange, props.onSelectIndex]);
 
+  useEffect(() => {
+    if (props.selectedIndex !== undefined) {
+      if (ref.current) {
+        // Set the selected index by changing the "selectedIndex" property of your custom element
+        (ref.current as any).selectedIndex = props.selectedIndex;
+      }
+    }
+  }, [props.selectedIndex]);
   return (
     <sp-picker
       size={props?.size}

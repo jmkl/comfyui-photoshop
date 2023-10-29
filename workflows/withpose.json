@@ -1,0 +1,212 @@
+{
+  "1": {
+    "inputs": {
+      "image": "face_asdasd (1).png",
+      "choose file to upload": "image"
+    },
+    "title": "FACE",
+    "class_type": "LoadImageFace"
+  },
+  "2": {
+    "inputs": {
+      "image": "LoadResizeImageMask_fg8b8.jpeg",
+      "method": "height",
+      "value": 512,
+      "choose file to upload": "image"
+    },
+    "title": "POSE",
+    "class_type": "LoadResizeImageMask"
+  },
+  "149": {
+    "inputs": {
+      "ipadapter_file": "ip-adapter-plus-face_sd15.bin"
+    },
+    "title": "Load IPAdapter Model",
+    "class_type": "IPAdapterModelLoader"
+  },
+  "151": {
+    "inputs": {
+      "clip_name": "model_sd15_ipadapter_plus_clipvision.safetensors"
+    },
+    "title": "Load CLIP Vision",
+    "class_type": "CLIPVisionLoader"
+  },
+  "152": {
+    "inputs": {
+      "enabled": true,
+      "swap_model": "inswapper_128.onnx",
+      "facedetection": "retinaface_resnet50",
+      "face_restore_model": "GFPGANv1.4.pth",
+      "detect_gender_source": "no",
+      "detect_gender_input": "no",
+      "source_faces_index": "0",
+      "input_faces_index": "0",
+      "console_log_level": 0,
+      "source_image": [
+        "1",
+        0
+      ],
+      "input_image": [
+        "158",
+        0
+      ]
+    },
+    "title": "ReActor - Fast Face Swap",
+    "class_type": "ReActorFaceSwap"
+  },
+  "153": {
+    "inputs": {
+      "ckpt_name": "epicrealism_pureEvolutionV5-inpainting.safetensors"
+    },
+    "title": "Load Checkpoint",
+    "class_type": "CheckpointLoaderSimple"
+  },
+  "155": {
+    "inputs": {
+      "seed": 1499861742346809,
+      "steps": 30,
+      "cfg": 6,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": 1,
+      "model": [
+        "181",
+        0
+      ],
+      "positive": [
+        "201",
+        0
+      ],
+      "negative": [
+        "156",
+        0
+      ],
+      "latent_image": [
+        "167",
+        0
+      ]
+    },
+    "title": "KSampler",
+    "class_type": "KSampler"
+  },
+  "156": {
+    "inputs": {
+      "text": "blurry, nipples, hat, cap, fat, embedding:epiCNegative, gray hair, asian",
+      "clip": [
+        "153",
+        1
+      ]
+    },
+    "title": "CLIP Text Encode (Prompt)",
+    "class_type": "CLIPTextEncode"
+  },
+  "158": {
+    "inputs": {
+      "samples": [
+        "155",
+        0
+      ],
+      "vae": [
+        "153",
+        2
+      ]
+    },
+    "title": "VAE Decode",
+    "class_type": "VAEDecode"
+  },
+  "159": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "152",
+        0
+      ]
+    },
+    "title": "Save Image",
+    "class_type": "SaveImage"
+  },
+  "167": {
+    "inputs": {
+      "width": 512,
+      "height": 512,
+      "batch_size": 1
+    },
+    "title": "Empty Latent Image",
+    "class_type": "EmptyLatentImage"
+  },
+  "171": {
+    "inputs": {
+      "text": "man in a shirt, thick facial hair",
+      "clip": [
+        "153",
+        1
+      ]
+    },
+    "title": "CLIP Text Encode (Prompt)",
+    "class_type": "CLIPTextEncode"
+  },
+  "181": {
+    "inputs": {
+      "weight": 0.8200000000000001,
+      "noise": 0.33,
+      "ipadapter": [
+        "149",
+        0
+      ],
+      "clip_vision": [
+        "151",
+        0
+      ],
+      "image": [
+        "1",
+        0
+      ],
+      "model": [
+        "153",
+        0
+      ]
+    },
+    "title": "Apply IPAdapter",
+    "class_type": "IPAdapterApply"
+  },
+  "201": {
+    "inputs": {
+      "strength": 1,
+      "conditioning": [
+        "171",
+        0
+      ],
+      "control_net": [
+        "202",
+        0
+      ],
+      "image": [
+        "205",
+        0
+      ]
+    },
+    "title": "Apply ControlNet",
+    "class_type": "ControlNetApply"
+  },
+  "202": {
+    "inputs": {
+      "control_net_name": "t2iadapter_openpose_sd14v1.pth"
+    },
+    "title": "Load ControlNet Model",
+    "class_type": "ControlNetLoader"
+  },
+  "205": {
+    "inputs": {
+      "detect_hand": "enable",
+      "detect_body": "enable",
+      "detect_face": "enable",
+      "resolution": 512,
+      "image": [
+        "2",
+        0
+      ]
+    },
+    "title": "OpenPose Pose Recognition",
+    "class_type": "OpenposePreprocessor"
+  }
+}

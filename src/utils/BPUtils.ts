@@ -1,8 +1,8 @@
-import { core, app, action, constants, imaging } from 'photoshop';
-import { BOUNDS, IMAGENERATOR_CONFIG, INPAINTINGCONFIG } from './props';
-import { FRCONFIG } from '../panels/FaceRestorePanel';
-import { sendWorkflowDataToServer } from './ServerUtils';
-import { generateRandomName } from './IOUtils';
+import {core, app, action, constants, imaging} from 'photoshop';
+import {BOUNDS, IMAGENERATOR_CONFIG, INPAINTINGCONFIG} from './props';
+import {FRCONFIG} from '../panels/FaceRestorePanel';
+import {sendWorkflowDataToServer} from './ServerUtils';
+import {generateRandomName} from './IOUtils';
 const fs = require('uxp').storage.localFileSystem;
 
 export const saveAsPng = (path: any) => {
@@ -95,7 +95,7 @@ export function executeFaceRestore(type: string, IOFolder: any, frconfig: FRCONF
         if (!selected) await toggleVisible();
 
         const rand_name = generateRandomName();
-        const newFile = await IOFolder?.input?.createFile(rand_name, { overwrite: true });
+        const newFile = await IOFolder?.input?.createFile(rand_name, {overwrite: true});
         const png = await fs.createSessionToken(newFile);
         const result = await action.batchPlay([saveAsPng(png)], {});
 
@@ -110,14 +110,37 @@ export function executeFaceRestore(type: string, IOFolder: any, frconfig: FRCONF
         await hostControl.resumeHistory(suspensionID, true);
         if (selected) await UNDO();
       },
-      { commandName: 'execute facerestore' }
+      {commandName: 'execute facerestore'}
     )
     .catch((e) => {
       console.log(e);
     });
 }
+export async function downloadImage(IOFolder: any, buffer: any, filetype: string, node_name?: string) {
+  return await core
+    .executeAsModal(
+      async (_executionContext, descriptor: object) => {
+        let hostControl = _executionContext.hostControl;
+        let documentID = app.activeDocument.id;
+        let suspensionID = await hostControl.suspendHistory({
+          documentID: documentID,
+          name: 'downloadImage',
+        });
 
-export async function saveSelectionToImage(bounds: BOUNDS, IOFolder: any) {
+        let rand_name = generateRandomName(filetype);
+        if (node_name) rand_name = node_name + '_' + rand_name;
+        const newJPG = await IOFolder?.input?.createFile(rand_name, {overwrite: true});
+        await newJPG.write(buffer, {format: require('uxp').storage.formats.binary});
+        await hostControl.resumeHistory(suspensionID, true);
+
+        return rand_name;
+      },
+      {commandName: 'downloading Image from url'}
+    )
+    .catch((e) => console.log(e));
+}
+
+export async function saveSelectionToImage(bounds: BOUNDS, IOFolder: any, node_name?: string) {
   const notselected = bounds.left == 0 && bounds.right == 0;
   if (notselected) return null;
   return await core.executeAsModal(
@@ -138,8 +161,9 @@ export async function saveSelectionToImage(bounds: BOUNDS, IOFolder: any) {
         ],
         {}
       );
-      const rand_name = generateRandomName();
-      const newJPG = await IOFolder?.input?.createFile(rand_name, { overwrite: true });
+      let rand_name = generateRandomName();
+      if (node_name) rand_name = node_name + '_' + rand_name;
+      const newJPG = await IOFolder?.input?.createFile(rand_name, {overwrite: true});
       const png = await fs.createSessionToken(newJPG);
       const result = await action.batchPlay([saveAsPng(png)], {});
       let new_name = result[0].in._path;
@@ -149,7 +173,7 @@ export async function saveSelectionToImage(bounds: BOUNDS, IOFolder: any) {
 
       return new_name;
     },
-    { commandName: 'save selection to image file' }
+    {commandName: 'save selection to image file'}
   );
 }
 
@@ -197,7 +221,7 @@ export function executeInpainting(IOFolder: any, config: FRCONFIG, inpaintingcon
           ],
           {}
         );
-        const newJPG = await IOFolder?.input?.createFile(rand_name, { overwrite: true });
+        const newJPG = await IOFolder?.input?.createFile(rand_name, {overwrite: true});
         const png = await fs.createSessionToken(newJPG);
         const result = await action.batchPlay([saveAsPng(png)], {});
         new_name = result[0].in._path;
@@ -207,7 +231,7 @@ export function executeInpainting(IOFolder: any, config: FRCONFIG, inpaintingcon
         await hostControl.resumeHistory(suspensionID, true);
         if (!notselected) await UNDO();
       },
-      { commandName: 'execute INPAINTING Workflow' }
+      {commandName: 'execute INPAINTING Workflow'}
     )
     .catch((e) => console.log(e));
 }
@@ -298,7 +322,7 @@ export function placeImageOnCanvas(imagename: string, outputFolder: any, selecti
         await app.activeDocument.activeLayers[0].scale(percentage, percentage, constants.AnchorPosition.MIDDLECENTER);
       }
     },
-    { commandName: 'place Event' }
+    {commandName: 'place Event'}
   );
 }
 

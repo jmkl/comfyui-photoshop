@@ -1,5 +1,5 @@
 /// <reference path="./global.d.ts"/>
-
+console.log("resilelayer");
 let layer = await doc.activeLayers[0];
 let b = layer.boundsNoEffects;
 let w = b.right - b.left;
@@ -14,7 +14,7 @@ if (w < docWidth) {
 else {
     scale = (docHeight / h) * 100;
 }
-
+logme("w docWidth");
 
 const aligncenter = [{
     "_obj": "align",

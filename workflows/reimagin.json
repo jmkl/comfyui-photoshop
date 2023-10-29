@@ -1,0 +1,134 @@
+{
+  "86": {
+    "inputs": {
+      "ckpt_name": "dreamshaper_8.safetensors",
+      "config_name": "Default",
+      "vae_name": "vae-ft-mse-840000-ema-pruned.safetensors",
+      "clip_skip": -1,
+      "lora1_name": "None",
+      "lora1_model_strength": 1,
+      "lora1_clip_strength": 1,
+      "lora2_name": "None",
+      "lora2_model_strength": 1,
+      "lora2_clip_strength": 1,
+      "lora3_name": "None",
+      "lora3_model_strength": 1,
+      "lora3_clip_strength": 1,
+      "positive": "a man in a suit, dark theme background, close up shot",
+      "positive_token_normalization": "none",
+      "positive_weight_interpretation": "comfy",
+      "negative": "blurry, nipples, hat, cap",
+      "negative_token_normalization": "none",
+      "negative_weight_interpretation": "comfy",
+      "empty_latent_width": 512,
+      "empty_latent_height": 512,
+      "batch_size": 1,
+      "seed": 0
+    },
+    "class_type": "ttN pipeLoader"
+  },
+  "87": {
+    "inputs": {
+      "lora_name": "LowRA.safetensors",
+      "lora_model_strength": 1,
+      "lora_clip_strength": 1,
+      "upscale_method": "None",
+      "factor": 1.5,
+      "crop": "disabled",
+      "sampler_state": "Sample",
+      "steps": 30,
+      "cfg": 6,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": 1,
+      "image_output": "Preview",
+      "save_prefix": "ComfyUI",
+      "seed": 1442031958110039,
+      "pipe": [
+        "86",
+        0
+      ],
+      "optional_model": [
+        "89",
+        0
+      ]
+    },
+    "class_type": "ttN pipeKSampler"
+  },
+  "88": {
+    "inputs": {
+      "ipadapter_file": "ip-adapter-plus-face_sd15.bin"
+    },
+    "class_type": "IPAdapterModelLoader"
+  },
+  "89": {
+    "inputs": {
+      "weight": 0.8,
+      "noise": 0.33,
+      "ipadapter": [
+        "88",
+        0
+      ],
+      "clip_vision": [
+        "90",
+        0
+      ],
+      "image": [
+        "104",
+        0
+      ],
+      "model": [
+        "86",
+        1
+      ]
+    },
+    "class_type": "IPAdapterApply"
+  },
+  "90": {
+    "inputs": {
+      "clip_name": "model_sd15_ipadapter_plus_clipvision.safetensors"
+    },
+    "class_type": "CLIPVisionLoader"
+  },
+  "94": {
+    "inputs": {
+      "enabled": true,
+      "swap_model": "inswapper_128.onnx",
+      "facedetection": "retinaface_resnet50",
+      "face_restore_model": "GFPGANv1.4.pth",
+      "detect_gender_source": "male",
+      "detect_gender_input": "male",
+      "source_faces_index": "0",
+      "input_faces_index": "0",
+      "console_log_level": 0,
+      "source_image": [
+        "104",
+        0
+      ],
+      "input_image": [
+        "87",
+        7
+      ]
+    },
+    "class_type": "ReActorFaceSwap"
+  },
+  "104": {
+    "inputs": {
+      "image": "29dv1.png",
+      "method": "height",
+      "value": 512,
+      "choose file to upload": "image"
+    },
+    "class_type": "LoadResizeImageMask"
+  },
+  "136": {
+    "inputs": {
+      "filename_prefix": "REIMAGE",
+      "images": [
+        "94",
+        0
+      ]
+    },
+    "class_type": "SaveImage"
+  }
+}
